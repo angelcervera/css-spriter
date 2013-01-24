@@ -1,5 +1,7 @@
+*.class
+*.~
+
 /build
 /dist
 /test-output
 /tmp
-/build.properties~
