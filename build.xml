@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="sprinter" default="dist" basedir=".">
+	<description>
+        Aplicación para la gestión desde línea de comandos.
+    </description>
+
+	<!-- set global properties for this build -->
+	<property file="./build.properties"/>
+
+	<target name="production">
+		<property name="enviroment" value="production" />
+		<antcall target="dist" />
+	</target>
+
+	<target name="init">
+		<!-- Create the time stamp . Access using ${DSTAMP} -->
+		<tstamp>
+			<format property="TODAY" pattern="yyyy-MM-dd HH:mm:ss" />
+		</tstamp>
+
+
+		<!-- Si no se especifica el entorno, se establece a "development" -->
+		<condition property="enviroment" value="development" >
+			<not>
+				<isset property="enviroment"/>
+			</not>
+		</condition>
+
+		<!-- Create the build directory structure used by compile -->
+		<delete dir="${build}/${enviroment}" failonerror="false" />
+		<mkdir dir="${build}/${enviroment}" />
+		<delete dir="${dist}/${enviroment}" failonerror="false" />
+		<mkdir dir="${dist}/${enviroment}" />
+	</target>
+
+
+	<!-- Inicio fase de compilación. -->
+	<target name="compile" depends="init" description="compile the source ">
+		<javac srcdir="${src}" destdir="${build}/${enviroment}" includeantruntime="false" debug="true" debuglevel="lines,vars,source" >
+			<classpath>
+				<pathelement location="${lib}/jcommander/jcommander-1.27.jar"/>
+			</classpath>
+		</javac>
+		<copy overwrite="true" todir="${build}/${enviroment}">
+			<fileset dir="${conf}/commons" includes="**/*"/>
+			<fileset dir="${conf}/${enviroment}" includes="**/*"/>
+		</copy>
+	</target>
+
+
+	<!-- Inicio fase de empaquetado para su distribución. -->
+	<target name="dist" depends="compile" description="generate the distribution">
+
+		<!-- TODO: Copiamos las librerías para su ejecución en el directorio lib. -->
+		<mkdir dir="${dist}/${enviroment}/lib"/>
+
+		<copy overwrite="true" todir="${dist}/${enviroment}/lib">
+			<fileset file="${lib}/jcommander/jcommander-1.27.jar"/>
+		</copy>
+
+		<manifestclasspath property="jar.classpath" jarfile="${dist}/${enviroment}/${project.name}-${project.version}.jar">
+			<classpath>
+				<fileset dir="${dist}/${enviroment}/lib">
+					<include name="**/*.jar"/>
+				</fileset>
+			</classpath>
+		</manifestclasspath>
+
+		<manifest file="${build}/${enviroment}/META-INF/MANIFEST.MF">
+			<attribute name="Built-By" value="${user.name}" />
+			<attribute name="Built-Date" value="${TODAY}"/>
+			<attribute name="Implementation-Title" value="${project.name}" />
+			<attribute name="Implementation-Version" value="${project.version}"/>
+			<attribute name="Implementation-Vendor" value="Ángel Cervera Claudio" />
+			<attribute name="Main-Class" value="com.acervera.spriter.SprinterMain"/>
+			<attribute name="Class-Path" value="${jar.classpath}" />
+		</manifest>
+
+		<!-- Creamos el jar. -->
+		<jar jarfile="${dist}/${enviroment}/${project.name}-${project.version}.jar" basedir="${build}/${enviroment}" manifest="${build}/${enviroment}/META-INF/MANIFEST.MF">
+		</jar>
+
+	</target>
+
+	<!-- Limpiamos los directorios generados. -->
+	<target name="clean" description="clean up">
+		<delete dir="${build}" />
+		<delete dir="${dist}" />
+	</target>
+
+</project>
